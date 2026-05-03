@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Home in the UK — Property Cost Tracker</title>
+<style>
+  :root{
+    --bg:#faf8f4; --ink:#1a1a1a; --muted:#6b6b6b; --line:#e5e2db;
+    --card:#ffffff; --accent:#2a5d4a; --accent-soft:#e8f0ec;
+    --warn:#b8552d; --good:#2a7a3a; --hover:#f3efe7;
+    --radius:10px; --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.04);
+    --font-serif: "Source Serif Pro", "Charter", Georgia, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:1.5}
+  a{color:var(--accent)}
+  header.topbar{
+    position:sticky;top:0;z-index:40;background:rgba(250,248,244,.92);backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap
+  }
+  header .brand{font-family:var(--font-serif);font-size:22px;font-weight:600;letter-spacing:-.01em}
+  header .brand small{font-family:var(--font-sans);font-weight:400;color:var(--muted);font-size:12px;margin-left:8px;letter-spacing:.04em;text-transform:uppercase}
+  header .spacer{flex:1}
+  .btn{
+    appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer;font-size:13px;
+    transition:background .12s ease, border-color .12s ease;
+  }
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.06)}
+  .btn.warn{color:var(--warn);border-color:#e7d3c8}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn.tiny{padding:4px 8px;font-size:12px}
+  .container{max-width:1200px;margin:0 auto;padding:24px 22px 80px}
+  .hero{margin:8px 0 22px}
+  .hero h1{font-family:var(--font-serif);font-size:34px;letter-spacing:-.015em;margin:0 0 6px}
+  .hero p{color:var(--muted);margin:0;max-width:60ch}
+  .nav{display:flex;gap:8px;margin:18px 0 24px;border-bottom:1px solid var(--line)}
+  .nav button{
+    background:none;border:none;padding:10px 14px;font:inherit;color:var(--muted);cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;font-size:14px
+  }
+  .nav button.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);position:relative;transition:transform .12s ease, box-shadow .12s ease
+  }
+  .card:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.04), 0 10px 24px rgba(0,0,0,.06)}
+  .card h3{margin:0 0 4px;font-family:var(--font-serif);font-size:18px}
+  .card .addr{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .card .price{font-size:22px;font-family:var(--font-serif);font-weight:600}
+  .card .all-in{color:var(--muted);font-size:13px;margin-top:2px}
+  .card .meta{display:flex;gap:10px;margin-top:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .card .meta span{background:var(--hover);padding:3px 8px;border-radius:99px}
+  .card .actions{display:flex;gap:6px;margin-top:14px;justify-content:flex-end}
+  .empty{
+    border:1px dashed var(--line);border-radius:var(--radius);padding:48px;text-align:center;color:var(--muted)
+  }
+  .empty h3{font-family:var(--font-serif);color:var(--ink);font-size:20px;margin-bottom:6px}
+  /* property detail */
+  .detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:18px}
+  .detail-head h1{font-family:var(--font-serif);font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+  .detail-head .addr{color:var(--muted);font-size:14px}
+  .detail-head .summary{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;
+    min-width:240px;box-shadow:var(--shadow)
+  }
+  .detail-head .summary .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--muted)}
+  .detail-head .summary .row strong{color:var(--ink)}
+  .detail-head .summary .total{
+    border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-family:var(--font-serif);
+    font-size:20px;display:flex;justify-content:space-between
+  }
+  .section{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:18px;box-shadow:var(--shadow)
+  }
+  .section h2{font-family:var(--font-serif);font-size:20px;margin:0 0 4px;letter-spacing:-.005em}
+  .section .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  table th{text-align:left;color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line)}
+  table td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table tr:last-child td{border-bottom:none}
+  table input[type=text], table input[type=number], table input[type=url]{
+    width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;font:inherit;background:transparent
+  }
+  table input:focus{outline:none;border-color:var(--accent);background:#fff}
+  table .num{text-align:right;font-variant-numeric:tabular-nums}
+  table input.num{text-align:right}
+  .row-total{font-weight:600;font-variant-numeric:tabular-nums}
+  .total-row td{border-top:2px solid var(--ink);padding-top:10px;font-weight:600;font-family:var(--font-serif);font-size:16px}
+  .pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-left:6px;letter-spacing:.04em;text-transform:uppercase}
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+  .field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .field input, .field select, .field textarea{
+    border:1px solid var(--line);background:#fff;padding:8px 10px;border-radius:8px;font:inherit
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--accent)}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .room-block{border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px;background:#fcfaf6}
+  .room-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+  .room-head h3{font-family:var(--font-serif);font-size:18px;margin:0}
+  .room-totals{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .room-totals strong{color:var(--ink);font-size:15px;margin-left:4px}
+  .quotes{margin-top:6px;padding:8px 10px;background:#fff;border:1px dashed var(--line);border-radius:8px}
+  .quotes table{font-size:13px}
+  .quotes td input{font-size:13px}
+  .quotes .best{background:var(--accent-soft)}
+  .quotes-toggle{font-size:12px;color:var(--accent);cursor:pointer;background:none;border:none;padding:4px 0}
+  .calc-helper{
+    background:var(--accent-soft);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;color:var(--accent)
+  }
+  .calc-helper code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:4px;font-size:12px}
+  .compare-table{font-size:13px}
+  .compare-table th{font-family:var(--font-serif);font-size:14px;text-transform:none;letter-spacing:0;color:var(--ink);padding:10px 8px}
+  .compare-table td{padding:8px;font-variant-numeric:tabular-nums}
+  .compare-table .best-cell{background:var(--accent-soft);font-weight:600}
+  .compare-table tr.divider td{border-top:2px solid var(--ink);font-family:var(--font-serif);font-size:15px}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:560px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  .modal h2{font-family:var(--font-serif);margin:0 0 4px}
+  .modal p{color:var(--muted);margin:0 0 16px;font-size:14px}
+  .sync-status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#cdcdcd}
+  .sync-dot.ok{background:var(--good)}
+  .sync-dot.err{background:var(--warn)}
+  .sync-dot.sync{background:#d4a843;animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+  .delete-btn{color:var(--warn);background:none;border:none;cursor:pointer;padding:4px 8px;font-size:13px}
+  .add-row{margin-top:8px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:60;opacity:0;transition:opacity .2s ease;pointer-events:none}
+  .toast.show{opacity:1}
+  details > summary{cursor:pointer;color:var(--accent);font-size:13px;padding:6px 0}
+  details > summary:hover{text-decoration:underline}
+  @media (max-width:640px){
+    .container{padding:16px}
+    .hero h1{font-size:26px}
+    .detail-head{flex-direction:column}
+    .detail-head .summary{width:100%}
+    table th:nth-child(3),table td:nth-child(3){display:none} /* hide notes column on narrow */
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">Home in the UK<small>Surrey · Guildford</small></div>
+  <div class="spacer"></div>
+  <div class="sync-status" id="syncStatus"><span class="sync-dot" id="syncDot"></span><span id="syncText">Local only</span></div>
+  <button class="btn" id="syncBtn">Sync setup</button>
+  <button class="btn ghost" id="exportBtn" title="Export all data as JSON">Export</button>
+  <button class="btn ghost" id="importBtn" title="Import JSON">Import</button>
+  <input type="file" id="importFile" accept="application/json" hidden />
+</header>
+
+<div class="container" id="app"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+ *  Home in the UK — Property Cost Tracker
+ *  Single-file app. Data persists to localStorage by default and optionally
+ *  syncs live to a Google Sheets backend via a Google Apps Script web app.
+ *  ========================================================================= */
+
+/* ---------- 1. Default data and prefill (Surrey/Guildford, May 2026) ---------- */
+
+const DEFAULT_PROFILE = {
+  firstTimeBuyer: true,
+  mainResidence: true,
+  withMortgage: true,
+  contingencyPct: 10,
+  vatPct: 20
+};
+
+// Reference council tax bands for Guildford 2025/26 (annual £).
+// Source: guildford.gov.uk — verify current year.
+const COUNCIL_TAX_GUILDFORD = { A:1626, B:1898, C:2170, D:2441, E:2984, F:3527, G:4070, H:4882 };
+
+/** SDLT (England, post-April 2025) ------------------------------------------- */
+function calcSDLT(price, isFTB, isMainResidence){
+  if(!price || price<=0) return 0;
+  const additional = !isMainResidence;
+  // Standard residential bands
+  const bands = [
+    {upto:125000, rate:0},
+    {upto:250000, rate:0.02},
+    {upto:925000, rate:0.05},
+    {upto:1500000, rate:0.10},
+    {upto:Infinity, rate:0.12}
+  ];
+  // FTB relief: if price <= 500k, 0% to 300k, 5% on 300k–500k. Above 500k = no relief.
+  if(isFTB && !additional && price <= 500000){
+    if(price <= 300000) return 0;
+    return (price - 300000) * 0.05;
+  }
+  let tax = 0, prev = 0;
+  for(const b of bands){
+    if(price > prev){
+      const taxableInBand = Math.min(price, b.upto) - prev;
+      tax += taxableInBand * b.rate;
+      prev = b.upto;
+    }
+  }
+  // Additional property surcharge +5% on whole price (post-Oct 2024)
+  if(additional) tax += price * 0.05;
+  return Math.round(tax);
+}
+
+/** Default mandatory cost rows for every new property. -------------------- */
+function defaultMandatoryCosts(price, profile){
+  const sdlt = calcSDLT(price || 400000, profile.firstTimeBuyer, profile.mainResidence);
+  // Land Registry e-portal scale
+  const lr = price <= 100000 ? 20
+          : price <= 200000 ? 40
+          : price <= 500000 ? 100
+          : price <= 1000000 ? 200 : 500;
+  // Council tax: assume Band E by default (Guildford)
+  return [
+    {id:uid(), category:"Tax", label:"Stamp Duty Land Tax", amount:sdlt, notes:"Auto-calculated from price + buyer profile", auto:"sdlt"},
+    {id:uid(), category:"Legal", label:"Solicitor / conveyancing fee", amount:1600, notes:"Surrey freehold typical incl. VAT"},
+    {id:uid(), category:"Legal", label:"Land Registry fee", amount:lr, notes:"e-portal scale", auto:"landregistry"},
+    {id:uid(), category:"Legal", label:"Local authority searches", amount:220, notes:"Guildford BC + drainage + environmental"},
+    {id:uid(), category:"Legal", label:"ID checks / AML", amount:25, notes:"Per buyer"},
+    {id:uid(), category:"Legal", label:"Bank transfer (CHAPS)", amount:35, notes:""},
+    {id:uid(), category:"Mortgage", label:"Lender arrangement / product fee", amount:999, notes:"Often addable to loan"},
+    {id:uid(), category:"Mortgage", label:"Valuation fee", amount:300, notes:"Often free with deal"},
+    {id:uid(), category:"Mortgage", label:"Broker fee", amount:300, notes:"0–500 typical"},
+    {id:uid(), category:"Survey", label:"RICS Level 2 (HomeBuyer)", amount:550, notes:"Switch to Level 3 for older / tired property"},
+    {id:uid(), category:"Move-in", label:"Removals (3-bed local)", amount:900, notes:"Surrey local move"},
+    {id:uid(), category:"Move-in", label:"Buildings & contents insurance (yr 1)", amount:350, notes:""},
+    {id:uid(), category:"Move-in", label:"Council tax (1st month, Band E)", amount:Math.round(COUNCIL_TAX_GUILDFORD.E/12), notes:"Guildford, change band as needed"},
+    {id:uid(), category:"Move-in", label:"EPC", amount:80, notes:"If not already provided"},
+    {id:uid(), category:"Move-in", label:"Broadband install", amount:30, notes:""}
+  ];
+}
+
+/** Default renovation areas (rooms / categories) ------------------------- */
+function defaultRenovationAreas(){
+  return [
+    {id:uid(), name:"Whole house (paint, carpets, etc.)", roomDims:null, items:[]},
+    {id:uid(), name:"Kitchen", roomDims:{l:4, w:3, h:2.5}, items:[]},
+    {id:uid(), name:"Living room", roomDims:{l:5, w:4, h:2.5}, items:[]},
+    {id:uid(), name:"Master bedroom", roomDims:{l:4, w:3.5, h:2.5}, items:[]},
+    {id:uid(), name:"Child's bedroom", roomDims:{l:3, w:3, h:2.5}, items:[]},
+    {id:uid(), name:"Bathroom", roomDims:{l:2.5, w:2, h:2.5}, items:[]},
+    {id:uid(), name:"Hallway / stairs", roomDims:{l:6, w:1.2, h:2.5}, items:[]},
+    {id:uid(), name:"Garden", roomDims:null, items:[]}
+  ];
+}
+
+/** Suggested item presets shown in 'Add common item' dropdown ----------- */
+const ITEM_PRESETS = {
+  "Whole house": [
+    {label:"Repaint (walls + ceilings)", unit:"m²", unitPrice:18, store:"Painter labour + paint"},
+    {label:"Recarpet (mid-range)", unit:"m²", unitPrice:32, store:"Carpetright/Tapi incl. fitting+underlay"},
+    {label:"Full rewire (3-bed)", unit:"job", unitPrice:6500, store:"Surrey electrician"},
+    {label:"Replaster ceilings", unit:"m²", unitPrice:25, store:"Plasterer"},
+    {label:"Replace internal doors (set of 6)", unit:"set", unitPrice:540, store:"Wickes / B&Q"},
+    {label:"Re-skirting", unit:"m", unitPrice:14, store:"Carpenter + materials"},
+    {label:"Boiler replacement", unit:"job", unitPrice:2800, store:"Combi swap"},
+    {label:"Loft insulation top-up", unit:"job", unitPrice:600, store:""}
+  ],
+  "Kitchen": [
+    {label:"New kitchen units", unit:"job", unitPrice:3500, store:"IKEA Metod / B&Q GoodHome"},
+    {label:"Worktop (laminate)", unit:"m", unitPrice:120, store:"Wickes"},
+    {label:"Splashback tiles", unit:"m²", unitPrice:55, store:"Topps Tiles"},
+    {label:"Kitchen fitter", unit:"job", unitPrice:3200, store:"Surrey labour"},
+    {label:"Appliances (oven, hob, hood, fridge)", unit:"job", unitPrice:1800, store:"AO / John Lewis"},
+    {label:"Plumber (sink/dishwasher)", unit:"job", unitPrice:450, store:""},
+    {label:"Repaint", unit:"m²", unitPrice:18, store:""},
+    {label:"Flooring (vinyl/LVT)", unit:"m²", unitPrice:42, store:"B&Q / Karndean"}
+  ],
+  "Bathroom": [
+    {label:"Bathroom suite (mid-range)", unit:"job", unitPrice:850, store:"Victoria Plum / B&Q"},
+    {label:"Wall tiles", unit:"m²", unitPrice:55, store:"Topps Tiles"},
+    {label:"Floor tiles", unit:"m²", unitPrice:65, store:"Topps Tiles"},
+    {label:"Tiler labour", unit:"m²", unitPrice:60, store:""},
+    {label:"Plumber (full install)", unit:"job", unitPrice:3200, store:"Surrey labour"},
+    {label:"Electrician (lights, extractor)", unit:"job", unitPrice:450, store:""}
+  ],
+  "Living room": [
+    {label:"Repaint", unit:"m²", unitPrice:18, store:""},
+    {label:"New flooring (engineered wood)", unit:"m²", unitPrice:55, store:"Howdens / Wickes"},
+    {label:"Plastering touch-ups", unit:"job", unitPrice:400, store:""},
+    {label:"Fireplace refurb", unit:"job", unitPrice:600, store:""},
+    {label:"Window blinds/curtains", unit:"job", unitPrice:350, store:"Hillarys / IKEA"}
+  ],
+  "Bedroom": [
+    {label:"Repaint", unit:"m²", unitPrice:18, store:""},
+    {label:"New carpet", unit:"m²", unitPrice:32, store:"Carpetright incl. fit"},
+    {label:"Built-in wardrobe", unit:"job", unitPrice:1200, store:"IKEA PAX"},
+    {label:"Blinds / curtains", unit:"job", unitPrice:200, store:""}
+  ],
+  "Hallway / stairs": [
+    {label:"New stair runner", unit:"m", unitPrice:75, store:""},
+    {label:"Repaint walls + ceiling", unit:"m²", unitPrice:18, store:""},
+    {label:"New banister/spindles", unit:"job", unitPrice:900, store:""}
+  ],
+  "Garden": [
+    {label:"Lawn returf", unit:"m²", unitPrice:14, store:""},
+    {label:"New patio (porcelain)", unit:"m²", unitPrice:120, store:"Bradstone / Marshalls"},
+    {label:"Fencing (per panel installed)", unit:"panel", unitPrice:130, store:"Jacksons / B&Q"},
+    {label:"Garden room / shed", unit:"job", unitPrice:3500, store:""},
+    {label:"Landscaper labour", unit:"day", unitPrice:260, store:"Surrey rate"},
+    {label:"Plants & shrubs", unit:"job", unitPrice:400, store:""}
+  ]
+};
+
+/* ---------- 2. State + persistence -------------------------------------- */
+
+const STORE_KEY = "homeintheuk.v1";
+const SYNC_KEY  = "homeintheuk.sync";
+let state = loadState();
+let syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY) || "null");
+let syncTimer = null;
+let lastSyncAt = 0;
+let view = {page:"list", id:null, compareIds:[]};
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(!s.profile) s.profile = {...DEFAULT_PROFILE};
+      if(!s.properties) s.properties = [];
+      return s;
+    }
+  }catch(e){}
+  return { profile:{...DEFAULT_PROFILE}, properties:[], updatedAt:Date.now() };
+}
+
+function saveState(skipSync){
+  state.updatedAt = Date.now();
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if(!skipSync) scheduleSync();
+}
+
+/* ---------- 3. Calculations ---------- */
+
+function recomputeAutoMandatory(p){
+  // Re-derive SDLT and Land Registry whenever price/profile changes
+  const price = +p.price || 0;
+  for(const c of p.mandatoryCosts){
+    if(c.auto === "sdlt"){
+      c.amount = calcSDLT(price, state.profile.firstTimeBuyer, state.profile.mainResidence);
+    }
+    if(c.auto === "landregistry"){
+      c.amount = price <= 100000 ? 20
+               : price <= 200000 ? 40
+               : price <= 500000 ? 100
+               : price <= 1000000 ? 200 : 500;
+    }
+  }
+}
+
+function lineItemTotal(it){
+  // If quotes exist, use the chosen (or cheapest) quote price
+  let unit = +it.unitPrice || 0;
+  if(it.quotes && it.quotes.length){
+    const valid = it.quotes.filter(q => +q.price > 0);
+    if(valid.length){
+      const chosen = it.chosenQuoteId
+        ? valid.find(q => q.id === it.chosenQuoteId)
+        : valid.slice().sort((a,b)=>+a.price - +b.price)[0];
+      if(chosen) unit = +chosen.price;
+    }
+  }
+  return (+it.qty || 0) * unit;
+}
+
+function areaTotal(area){
+  return (area.items||[]).reduce((s,it)=>s + lineItemTotal(it), 0);
+}
+
+function renovationTotal(p){
+  return (p.renovation||[]).reduce((s,a)=>s + areaTotal(a), 0);
+}
+
+function mandatoryTotal(p){
+  return (p.mandatoryCosts||[]).reduce((s,c)=>s + (+c.amount||0), 0);
+}
+
+function contingency(p){
+  return Math.round(renovationTotal(p) * (state.profile.contingencyPct/100));
+}
+
+function allInTotal(p){
+  return (+p.price||0) + mandatoryTotal(p) + renovationTotal(p) + contingency(p);
+}
+
+function fmtGBP(n){
+  if(n == null || isNaN(n)) return "£0";
+  return "£" + Math.round(n).toLocaleString("en-GB");
+}
+
+/* ---------- 4. Materials calculator (room dimensions) --------------- */
+
+function paintLitres(dims, coats=2){
+  if(!dims) return 0;
+  // walls: perimeter * height, ceiling: l * w. ~12 m² per litre, then x coats, +10% waste
+  const walls = 2*(dims.l + dims.w) * dims.h;
+  const ceiling = dims.l * dims.w;
+  const m2 = walls + ceiling;
+  return Math.ceil((m2/12) * coats * 1.10);
+}
+function flooringM2(dims){
+  if(!dims) return 0;
+  return Math.ceil(dims.l * dims.w * 1.10);
+}
+function wallTilesM2(dims, height=2.4){
+  if(!dims) return 0;
+  return Math.ceil(2*(dims.l + dims.w) * Math.min(dims.h, height) * 1.10);
+}
+function skirtingMetres(dims){
+  if(!dims) return 0;
+  return Math.ceil(2*(dims.l + dims.w) - 0.9); // minus a doorway
+}
+function wallpaperRolls(dims){
+  if(!dims) return 0;
+  // Standard roll covers ~5 m² usable
+  const walls = 2*(dims.l + dims.w) * dims.h;
+  return Math.ceil(walls / 5 * 1.10);
+}
+
+/* ---------- 5. Sync (Google Apps Script web app) ------------------- */
+
+function setSyncStatus(state, text){
+  const dot = document.getElementById("syncDot");
+  const txt = document.getElementById("syncText");
+  dot.className = "sync-dot " + (state||"");
+  txt.textContent = text;
+}
+
+function scheduleSync(){
+  if(!syncCfg || !syncCfg.url) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushSync, 800);
+}
+
+async function pushSync(){
+  if(!syncCfg || !syncCfg.url) return;
+  setSyncStatus("sync","Syncing…");
+  try{
+    const r = await fetch(syncCfg.url, {
+      method:"POST",
+      mode:"cors",
+      headers:{"Content-Type":"text/plain"}, // text/plain avoids preflight on Apps Script
+      body: JSON.stringify({ token: syncCfg.token, action:"save", state })
+    });
+    const j = await r.json();
+    if(j && j.ok){
+      lastSyncAt = Date.now();
+      setSyncStatus("ok","Synced " + new Date().toLocaleTimeString());
+    } else {
+      setSyncStatus("err", j.error || "Sync error");
+    }
+  }catch(e){
+    setSyncStatus("err","Offline");
+  }
+}
+
+async function pullSync(){
+  if(!syncCfg || !syncCfg.url) return;
+  setSyncStatus("sync","Loading…");
+  try{
+    const r = await fetch(syncCfg.url + "?token=" + encodeURIComponent(syncCfg.token) + "&action=load", {mode:"cors"});
+    const j = await r.json();
+    if(j && j.ok && j.state && j.state.updatedAt && j.state.updatedAt > (state.updatedAt||0)){
+      state = j.state;
+      saveState(true);
+      render();
+      setSyncStatus("ok","Loaded from cloud");
+    } else {
+      setSyncStatus("ok","Up to date");
+    }
+  }catch(e){
+    setSyncStatus("err","Offline");
+  }
+}
+
+/* Auto pull every 30s if sync configured */
+setInterval(()=>{ if(syncCfg && syncCfg.url) pullSync(); }, 30000);
+
+/* ---------- 6. Rendering ---------- */
+
+const $app = () => document.getElementById("app");
+
+function render(){
+  if(view.page === "list") renderList();
+  else if(view.page === "detail") renderDetail();
+  else if(view.page === "compare") renderCompare();
+  else if(view.page === "settings") renderSettings();
+}
+
+function navTabs(active){
+  return `
+    <div class="nav">
+      <button class="${active==='list'?'active':''}" onclick="goto('list')">Properties</button>
+      <button class="${active==='compare'?'active':''}" onclick="goto('compare')">Compare</button>
+      <button class="${active==='settings'?'active':''}" onclick="goto('settings')">Buyer profile</button>
+    </div>`;
+}
+
+function renderList(){
+  const props = state.properties;
+  $app().innerHTML = `
+    <div class="hero">
+      <h1>Your shortlisted properties</h1>
+      <p>Track every cost — purchase price, legal, taxes, mortgage, survey, move-in and renovation — for each home you view in the Guildford area. Numbers are prefilled with current Surrey averages; edit anything inline.</p>
+    </div>
+    ${navTabs('list')}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+      <div style="color:var(--muted);font-size:13px">${props.length} ${props.length===1?'property':'properties'}</div>
+      <button class="btn primary" onclick="addProperty()">+ Add property</button>
+    </div>
+    ${props.length===0 ? `
+      <div class="empty">
+        <h3>No properties yet</h3>
+        <p>Add the first home you've viewed on Zoopla or Rightmove. Costs are prefilled and editable.</p>
+        <div style="margin-top:16px"><button class="btn primary" onclick="addProperty()">+ Add your first property</button></div>
+      </div>
+    ` : `
+      <div class="grid-cards">
+        ${props.map(p => `
+          <div class="card" onclick="openProperty('${p.id}')" style="cursor:pointer">
+            <h3>${escapeHtml(p.name || 'Untitled')}</h3>
+            <div class="addr">${escapeHtml(p.address || '—')}</div>
+            <div class="price">${fmtGBP(p.price)}</div>
+            <div class="all-in">All-in: <strong>${fmtGBP(allInTotal(p))}</strong></div>
+            <div class="meta">
+              ${p.beds ? `<span>${p.beds} bed</span>` : ''}
+              ${p.epc ? `<span>EPC ${escapeHtml(p.epc)}</span>` : ''}
+              ${p.councilTaxBand ? `<span>Band ${escapeHtml(p.councilTaxBand)}</span>` : ''}
+              ${p.tenure ? `<span>${escapeHtml(p.tenure)}</span>` : ''}
+            </div>
+            <div class="actions" onclick="event.stopPropagation()">
+              ${p.listingUrl ? `<a class="btn tiny" href="${escapeAttr(p.listingUrl)}" target="_blank" rel="noopener">Listing ↗</a>` : ''}
+              <button class="btn tiny" onclick="duplicateProperty('${p.id}')">Duplicate</button>
+              <button class="btn tiny warn" onclick="deleteProperty('${p.id}')">Delete</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
+}
+
+function renderDetail(){
+  const p = state.properties.find(x=>x.id===view.id);
+  if(!p){ view.page='list'; render(); return; }
+  recomputeAutoMandatory(p);
+
+  // Group mandatory by category
+  const groups = {};
+  for(const c of p.mandatoryCosts){ (groups[c.category] = groups[c.category]||[]).push(c); }
+
+  $app().innerHTML = `
+    <div style="margin-bottom:10px"><button class="btn ghost" onclick="goto('list')">← Back to properties</button></div>
+    <div class="detail-head">
+      <div style="flex:1;min-width:260px">
+        <h1>${escapeHtml(p.name || 'Untitled property')}</h1>
+        <div class="addr">${escapeHtml(p.address || '')}</div>
+        ${p.listingUrl ? `<div style="margin-top:6px"><a href="${escapeAttr(p.listingUrl)}" target="_blank">Open listing ↗</a></div>` : ''}
+      </div>
+      <div class="summary">
+        <div class="row"><span>Asking price</span><strong>${fmtGBP(p.price)}</strong></div>
+        <div class="row"><span>Mandatory costs</span><strong>${fmtGBP(mandatoryTotal(p))}</strong></div>
+        <div class="row"><span>Renovation</span><strong>${fmtGBP(renovationTotal(p))}</strong></div>
+        <div class="row"><span>Contingency (${state.profile.contingencyPct}%)</span><strong>${fmtGBP(contingency(p))}</strong></div>
+        <div class="total"><span>All-in</span><span>${fmtGBP(allInTotal(p))}</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>About this property</h2>
+      <div class="form-grid">
+        <div class="field"><label>Nickname</label><input type="text" value="${escapeAttr(p.name||'')}" oninput="updateProp('${p.id}','name',this.value)" placeholder="e.g. The Onslow Village cottage"></div>
+        <div class="field"><label>Address / area</label><input type="text" value="${escapeAttr(p.address||'')}" oninput="updateProp('${p.id}','address',this.value)" placeholder="e.g. Onslow Village, Guildford"></div>
+        <div class="field"><label>Asking price (£)</label><input type="number" value="${p.price||''}" oninput="updateProp('${p.id}','price',+this.value); refreshDetailNumbers('${p.id}')" placeholder="400000"></div>
+        <div class="field"><label>Listing URL (Zoopla/Rightmove)</label><input type="url" value="${escapeAttr(p.listingUrl||'')}" oninput="updateProp('${p.id}','listingUrl',this.value)"></div>
+        <div class="field"><label>Bedrooms</label><input type="number" value="${p.beds||''}" oninput="updateProp('${p.id}','beds',+this.value)"></div>
+        <div class="field"><label>Internal floor area (m²)</label><input type="number" value="${p.sqm||''}" oninput="updateProp('${p.id}','sqm',+this.value)"></div>
+        <div class="field"><label>Tenure</label>
+          <select onchange="updateProp('${p.id}','tenure',this.value)">
+            <option value="">—</option>
+            <option ${p.tenure==='Freehold'?'selected':''}>Freehold</option>
+            <option ${p.tenure==='Leasehold'?'selected':''}>Leasehold</option>
+            <option ${p.tenure==='Share of Freehold'?'selected':''}>Share of Freehold</option>
+          </select>
+        </div>
+        <div class="field"><label>EPC rating</label>
+          <select onchange="updateProp('${p.id}','epc',this.value)">
+            <option value="">—</option>
+            ${['A','B','C','D','E','F','G'].map(g=>`<option ${p.epc===g?'selected':''}>${g}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Council tax band</label>
+          <select onchange="updateProp('${p.id}','councilTaxBand',this.value); updateCouncilTaxRow('${p.id}')">
+            <option value="">—</option>
+            ${Object.keys(COUNCIL_TAX_GUILDFORD).map(g=>`<option ${p.councilTaxBand===g?'selected':''}>${g}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:8px"><label>Viewing notes</label><textarea rows="2" oninput="updateProp('${p.id}','notes',this.value)" placeholder="What you liked, concerns, condition…">${escapeHtml(p.notes||'')}</textarea></div>
+    </div>
+
+    <div class="section">
+      <h2>Mandatory purchase costs <span class="pill">auto-calc</span></h2>
+      <div class="sub">Stamp Duty and Land Registry update automatically from the price and your buyer profile. Edit any value to override.</div>
+      ${Object.entries(groups).map(([cat,rows])=>`
+        <h3 style="font-family:var(--font-serif);font-size:16px;margin:14px 0 6px;color:var(--accent)">${cat}</h3>
+        <table>
+          <thead><tr><th>Item</th><th class="num" style="width:130px">Amount (£)</th><th style="width:35%">Notes</th><th style="width:40px"></th></tr></thead>
+          <tbody>
+          ${rows.map(c=>`
+            <tr>
+              <td><input type="text" value="${escapeAttr(c.label||'')}" oninput="updateMandatory('${p.id}','${c.id}','label',this.value)"></td>
+              <td><input class="num" type="number" value="${c.amount||0}" oninput="updateMandatory('${p.id}','${c.id}','amount',+this.value); refreshDetailNumbers('${p.id}')" ${c.auto?'title="Auto-calculated — editing overrides"':''}></td>
+              <td><input type="text" value="${escapeAttr(c.notes||'')}" oninput="updateMandatory('${p.id}','${c.id}','notes',this.value)"></td>
+              <td><button class="delete-btn" onclick="deleteMandatory('${p.id}','${c.id}')" title="Remove">✕</button></td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+      `).join('')}
+      <div class="add-row"><button class="btn tiny" onclick="addMandatory('${p.id}')">+ Add custom cost</button></div>
+      <div class="total-row" style="margin-top:14px;padding-top:10px;border-top:2px solid var(--ink);display:flex;justify-content:space-between;font-family:var(--font-serif);font-size:18px">
+        <span>Mandatory total</span><span id="mandTotal-${p.id}">${fmtGBP(mandatoryTotal(p))}</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Renovation budget</h2>
+      <div class="sub">Add line items per room or category. Quantity × unit price (or chosen supplier quote).</div>
+      ${(p.renovation||[]).map(area => renderArea(p, area)).join('')}
+      <div class="add-row" style="margin-top:10px">
+        <button class="btn tiny" onclick="addArea('${p.id}')">+ Add room / category</button>
+      </div>
+      <div class="total-row" style="margin-top:14px;padding-top:10px;border-top:2px solid var(--ink);display:flex;justify-content:space-between;font-family:var(--font-serif);font-size:18px">
+        <span>Renovation total</span>
+        <span id="renoTotal-${p.id}">${fmtGBP(renovationTotal(p))}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:6px">
+        <span>+ Contingency ${state.profile.contingencyPct}%</span>
+        <span id="contTotal-${p.id}">${fmtGBP(contingency(p))}</span>
+      </div>
+    </div>
+
+    <div class="section" style="background:var(--accent-soft);border-color:#cfe0d6">
+      <h2>All-in summary</h2>
+      <table style="font-size:15px">
+        <tr><td>Asking price</td><td class="num">${fmtGBP(p.price)}</td></tr>
+        <tr><td>Mandatory costs</td><td class="num">${fmtGBP(mandatoryTotal(p))}</td></tr>
+        <tr><td>Renovation</td><td class="num">${fmtGBP(renovationTotal(p))}</td></tr>
+        <tr><td>Contingency (${state.profile.contingencyPct}%)</td><td class="num">${fmtGBP(contingency(p))}</td></tr>
+        <tr class="total-row"><td>Total cash needed</td><td class="num">${fmtGBP(allInTotal(p))}</td></tr>
+        ${p.sqm ? `<tr><td>Cost per m² (all-in)</td><td class="num">${fmtGBP(allInTotal(p)/p.sqm)}/m²</td></tr>` : ''}
+      </table>
+    </div>
+  `;
+}
+
+function renderArea(p, area){
+  const isRoom = !!area.roomDims;
+  const dims = area.roomDims;
+  const presetKey =
+    /kitchen/i.test(area.name) ? "Kitchen"
+    : /bath/i.test(area.name) ? "Bathroom"
+    : /living/i.test(area.name) ? "Living room"
+    : /bedroom/i.test(area.name) ? "Bedroom"
+    : /hall|stair/i.test(area.name) ? "Hallway / stairs"
+    : /garden/i.test(area.name) ? "Garden"
+    : "Whole house";
+  const presets = ITEM_PRESETS[presetKey] || [];
+
+  return `
+    <div class="room-block" id="area-${area.id}">
+      <div class="room-head">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <input type="text" value="${escapeAttr(area.name||'')}" oninput="updateArea('${p.id}','${area.id}','name',this.value)" style="font-family:var(--font-serif);font-size:18px;border:1px solid transparent;background:transparent;padding:4px;border-radius:6px;flex:1" onfocus="this.style.borderColor='var(--line)';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+          <button class="btn tiny" onclick="toggleDims('${p.id}','${area.id}')">${isRoom?'Hide':'Add'} dimensions</button>
+        </div>
+        <div class="room-totals">Total <strong>${fmtGBP(areaTotal(area))}</strong></div>
+      </div>
+
+      ${isRoom ? `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+          <div class="field"><label>Length (m)</label><input type="number" step="0.1" value="${dims.l||''}" oninput="updateDim('${p.id}','${area.id}','l',+this.value)"></div>
+          <div class="field"><label>Width (m)</label><input type="number" step="0.1" value="${dims.w||''}" oninput="updateDim('${p.id}','${area.id}','w',+this.value)"></div>
+          <div class="field"><label>Height (m)</label><input type="number" step="0.1" value="${dims.h||''}" oninput="updateDim('${p.id}','${area.id}','h',+this.value)"></div>
+        </div>
+        <div class="calc-helper">
+          From these dimensions:
+          <strong>${paintLitres(dims)}L paint</strong> (2 coats, +10%) ·
+          <strong>${flooringM2(dims)} m² flooring</strong> ·
+          <strong>${wallTilesM2(dims)} m² wall tiles</strong> ·
+          <strong>${wallpaperRolls(dims)} wallpaper rolls</strong> ·
+          <strong>${skirtingMetres(dims)} m skirting</strong>
+        </div>
+      ` : ''}
+
+      <table style="margin-top:10px">
+        <thead><tr>
+          <th>Item</th>
+          <th class="num" style="width:70px">Qty</th>
+          <th style="width:80px">Unit</th>
+          <th class="num" style="width:110px">Unit £</th>
+          <th class="num" style="width:110px">Total</th>
+          <th style="width:40px"></th>
+        </tr></thead>
+        <tbody>
+        ${(area.items||[]).map(it=>`
+          <tr>
+            <td>
+              <input type="text" value="${escapeAttr(it.label||'')}" oninput="updateItem('${p.id}','${area.id}','${it.id}','label',this.value)" placeholder="e.g. Kitchen units">
+              <button class="quotes-toggle" onclick="toggleQuotes(this)">${(it.quotes||[]).length ? `${(it.quotes||[]).length} quote${(it.quotes||[]).length>1?'s':''}` : '+ compare suppliers'}</button>
+              <div class="quotes" style="display:none">
+                <table><thead><tr><th>Supplier</th><th class="num">£</th><th>Link</th><th></th><th></th></tr></thead>
+                <tbody id="quotes-${it.id}">
+                  ${(it.quotes||[]).map(q=>quoteRowHtml(p.id, area.id, it.id, q, it.quotes, it.chosenQuoteId)).join('')}
+                </tbody></table>
+                <button class="btn tiny" onclick="addQuote('${p.id}','${area.id}','${it.id}')">+ Add supplier</button>
+              </div>
+            </td>
+            <td><input class="num" type="number" step="0.1" value="${it.qty||''}" oninput="updateItem('${p.id}','${area.id}','${it.id}','qty',+this.value); refreshAreaTotals('${p.id}','${area.id}')"></td>
+            <td><input type="text" value="${escapeAttr(it.unit||'')}" oninput="updateItem('${p.id}','${area.id}','${it.id}','unit',this.value)" placeholder="m², job"></td>
+            <td><input class="num" type="number" value="${it.unitPrice||''}" oninput="updateItem('${p.id}','${area.id}','${it.id}','unitPrice',+this.value); refreshAreaTotals('${p.id}','${area.id}')" ${(it.quotes||[]).length?'title="Overridden by selected quote when present"':''}></td>
+            <td class="num row-total" id="lineTotal-${it.id}">${fmtGBP(lineItemTotal(it))}</td>
+            <td><button class="delete-btn" onclick="deleteItem('${p.id}','${area.id}','${it.id}')" title="Remove">✕</button></td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn tiny" onclick="addItem('${p.id}','${area.id}')">+ Add line</button>
+        ${presets.length ? `
+          <select onchange="addPreset('${p.id}','${area.id}',this.selectedIndex-1,'${presetKey}'); this.selectedIndex=0" style="border:1px solid var(--line);background:#fff;padding:6px 10px;border-radius:8px;font:inherit;font-size:12px">
+            <option value="-1">+ Add common ${presetKey.toLowerCase()} item…</option>
+            ${presets.map(pr=>`<option>${pr.label} (${pr.unit} @ £${pr.unitPrice})</option>`).join('')}
+          </select>
+        ` : ''}
+        <button class="btn tiny ghost" onclick="deleteArea('${p.id}','${area.id}')" style="margin-left:auto;color:var(--warn)">Remove area</button>
+      </div>
+    </div>
+  `;
+}
+
+function quoteRowHtml(pid, aid, iid, q, allQuotes, chosenId){
+  const minPrice = Math.min(...allQuotes.filter(x=>+x.price>0).map(x=>+x.price));
+  const isCheapest = +q.price > 0 && +q.price === minPrice;
+  const isChosen = chosenId === q.id || (!chosenId && isCheapest);
+  return `
+    <tr class="${isChosen?'best':''}">
+      <td><input type="text" value="${escapeAttr(q.store||'')}" oninput="updateQuote('${pid}','${aid}','${iid}','${q.id}','store',this.value)" placeholder="B&Q / Wickes / …"></td>
+      <td><input class="num" type="number" value="${q.price||''}" oninput="updateQuote('${pid}','${aid}','${iid}','${q.id}','price',+this.value); refreshAreaTotals('${pid}','${aid}')"></td>
+      <td><input type="url" value="${escapeAttr(q.url||'')}" oninput="updateQuote('${pid}','${aid}','${iid}','${q.id}','url',this.value)" placeholder="https://…"></td>
+      <td><label style="font-size:12px;color:var(--muted)"><input type="radio" name="chosen-${iid}" ${isChosen?'checked':''} onchange="chooseQuote('${pid}','${aid}','${iid}','${q.id}'); refreshAreaTotals('${pid}','${aid}')"> use</label></td>
+      <td><button class="delete-btn" onclick="deleteQuote('${pid}','${aid}','${iid}','${q.id}')">✕</button></td>
+    </tr>`;
+}
+
+function refreshDetailNumbers(pid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  recomputeAutoMandatory(p);
+  // Re-render the SDLT and Land Registry input values directly
+  for(const c of p.mandatoryCosts){
+    if(c.auto){
+      const inputs = document.querySelectorAll(`input[oninput*="'${c.id}'"]`);
+      // Only update the amount input (class .num)
+      inputs.forEach(inp => { if(inp.classList.contains('num')) inp.value = c.amount; });
+    }
+  }
+  const m = document.getElementById('mandTotal-'+pid); if(m) m.textContent = fmtGBP(mandatoryTotal(p));
+  // Update the summary card too
+  const summary = document.querySelector('.detail-head .summary');
+  if(summary){
+    summary.querySelectorAll('.row strong')[0].textContent = fmtGBP(p.price);
+    summary.querySelectorAll('.row strong')[1].textContent = fmtGBP(mandatoryTotal(p));
+    summary.querySelector('.total span:last-child').textContent = fmtGBP(allInTotal(p));
+  }
+}
+
+function refreshAreaTotals(pid, aid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  // line totals
+  for(const it of a.items){
+    const el = document.getElementById('lineTotal-'+it.id);
+    if(el) el.textContent = fmtGBP(lineItemTotal(it));
+  }
+  // area total
+  const head = document.querySelector(`#area-${aid} .room-totals strong`);
+  if(head) head.textContent = fmtGBP(areaTotal(a));
+  // grand reno
+  const r = document.getElementById('renoTotal-'+pid); if(r) r.textContent = fmtGBP(renovationTotal(p));
+  const c = document.getElementById('contTotal-'+pid); if(c) c.textContent = fmtGBP(contingency(p));
+  // summary card
+  const summary = document.querySelector('.detail-head .summary');
+  if(summary){
+    summary.querySelectorAll('.row strong')[2].textContent = fmtGBP(renovationTotal(p));
+    summary.querySelectorAll('.row strong')[3].textContent = fmtGBP(contingency(p));
+    summary.querySelector('.total span:last-child').textContent = fmtGBP(allInTotal(p));
+  }
+}
+
+function renderCompare(){
+  const props = state.properties;
+  $app().innerHTML = `
+    <div class="hero">
+      <h1>Side-by-side comparison</h1>
+      <p>Pick 2–4 properties to compare on price, total cash needed, and £/m².</p>
+    </div>
+    ${navTabs('compare')}
+    <div class="section">
+      <h3 style="font-family:var(--font-serif);margin-top:0">Choose properties</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        ${props.map(p=>`
+          <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:99px;cursor:pointer;background:${view.compareIds.includes(p.id)?'var(--accent-soft)':'#fff'}">
+            <input type="checkbox" ${view.compareIds.includes(p.id)?'checked':''} onchange="toggleCompare('${p.id}')"> ${escapeHtml(p.name||'Untitled')}
+          </label>
+        `).join('') || '<div style="color:var(--muted)">No properties yet — add some first.</div>'}
+      </div>
+      ${view.compareIds.length >= 2 ? renderCompareTable() : '<div style="color:var(--muted);font-size:13px">Select at least 2 to compare.</div>'}
+    </div>
+  `;
+}
+
+function renderCompareTable(){
+  const cols = state.properties.filter(p => view.compareIds.includes(p.id));
+  const rows = [
+    {label:"Asking price", val:p=>p.price, fmt:fmtGBP},
+    {label:"Bedrooms", val:p=>p.beds, fmt:v=>v||'—'},
+    {label:"Floor area (m²)", val:p=>p.sqm, fmt:v=>v||'—'},
+    {label:"EPC", val:p=>p.epc, fmt:v=>v||'—'},
+    {label:"Council tax band", val:p=>p.councilTaxBand, fmt:v=>v||'—'},
+    {label:"divider", divider:true, label2:"Costs"},
+    {label:"Stamp Duty", val:p=>(p.mandatoryCosts.find(c=>c.auto==='sdlt')||{}).amount||0, fmt:fmtGBP},
+    {label:"Mandatory total", val:p=>mandatoryTotal(p), fmt:fmtGBP, lowerBetter:true},
+    {label:"Renovation", val:p=>renovationTotal(p), fmt:fmtGBP, lowerBetter:true},
+    {label:"Contingency", val:p=>contingency(p), fmt:fmtGBP, lowerBetter:true},
+    {label:"divider", divider:true, label2:"All-in"},
+    {label:"Total cash needed", val:p=>allInTotal(p), fmt:fmtGBP, lowerBetter:true, bold:true},
+    {label:"£/m² all-in", val:p=>p.sqm?Math.round(allInTotal(p)/p.sqm):0, fmt:v=>v?fmtGBP(v)+'/m²':'—', lowerBetter:true}
+  ];
+  return `
+    <table class="compare-table">
+      <thead><tr><th></th>${cols.map(p=>`<th>${escapeHtml(p.name||'Untitled')}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${rows.map(r=>{
+          if(r.divider) return `<tr class="divider"><td colspan="${cols.length+1}">${r.label2}</td></tr>`;
+          const values = cols.map(p => r.val(p));
+          let bestIdx = -1;
+          if(r.lowerBetter){
+            const positive = values.filter(v=>+v>0);
+            if(positive.length){
+              const min = Math.min(...positive);
+              bestIdx = values.findIndex(v => +v === min);
+            }
+          }
+          return `<tr>
+            <td style="color:var(--muted)">${r.label}</td>
+            ${values.map((v,i)=>`<td class="num ${i===bestIdx?'best-cell':''}" ${r.bold?'style="font-weight:700"':''}>${r.fmt(v)}</td>`).join('')}
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderSettings(){
+  const pf = state.profile;
+  $app().innerHTML = `
+    <div class="hero">
+      <h1>Buyer profile & settings</h1>
+      <p>These choices affect Stamp Duty and which mandatory costs prefill on every new property.</p>
+    </div>
+    ${navTabs('settings')}
+    <div class="section">
+      <h2>Buyer status</h2>
+      <div class="form-grid">
+        <label class="field"><span><input type="checkbox" ${pf.firstTimeBuyer?'checked':''} onchange="updateProfile('firstTimeBuyer',this.checked)"> First-time buyer (in the UK)</span><small style="color:var(--muted)">First £300k SDLT-free up to £500k purchase</small></label>
+        <label class="field"><span><input type="checkbox" ${pf.mainResidence?'checked':''} onchange="updateProfile('mainResidence',this.checked)"> This is your only/main residence</span><small style="color:var(--muted)">Avoids the +5% additional property surcharge</small></label>
+        <label class="field"><span><input type="checkbox" ${pf.withMortgage?'checked':''} onchange="updateProfile('withMortgage',this.checked)"> Buying with a mortgage</span><small style="color:var(--muted)">Includes arrangement / valuation / broker fees</small></label>
+        <div class="field"><label>Renovation contingency (%)</label><input type="number" value="${pf.contingencyPct}" oninput="updateProfile('contingencyPct',+this.value)"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Quick SDLT calculator</h2>
+      <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field"><label>Purchase price (£)</label><input type="number" id="sdltCalcPrice" value="400000" oninput="document.getElementById('sdltCalcOut').textContent=fmtGBP(calcSDLT(+this.value, ${pf.firstTimeBuyer}, ${pf.mainResidence}))"></div>
+        <div class="field"><label>Stamp Duty</label><div id="sdltCalcOut" style="font-family:var(--font-serif);font-size:24px">${fmtGBP(calcSDLT(400000, pf.firstTimeBuyer, pf.mainResidence))}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Based on England rates from 1 April 2025. Verify on <a href="https://www.gov.uk/stamp-duty-land-tax/residential-property-rates" target="_blank">gov.uk</a> for any change.</div>
+    </div>
+
+    <div class="section">
+      <h2>Cloud sync (Google Sheets)</h2>
+      ${syncCfg && syncCfg.url
+        ? `<div style="margin-bottom:10px;color:var(--good)">✓ Connected to <code>${escapeHtml(syncCfg.url.slice(0,60))}…</code></div>
+           <button class="btn" onclick="pullSync()">Pull from cloud now</button>
+           <button class="btn" onclick="pushSync()">Push to cloud now</button>
+           <button class="btn warn" onclick="disconnectSync()">Disconnect</button>`
+        : `<div class="sub">Sync this app live with your partner via a free Google Sheet. Click below for setup.</div>
+           <button class="btn primary" onclick="openSyncModal()">Set up Google Sheets sync</button>`
+      }
+      <details style="margin-top:14px"><summary>Why Google Sheets?</summary>
+      <p style="font-size:13px;color:var(--muted)">Your data stays in <em>your</em> Google account. Only people you share the Sheet with can see it. The HTML app reads/writes to it via a small Apps Script you deploy once. No third-party servers. Free.</p>
+      </details>
+    </div>
+
+    <div class="section">
+      <h2>Reference: Guildford council tax 2025/26</h2>
+      <table>
+        <thead><tr><th>Band</th><th class="num">Annual £</th><th class="num">Monthly £</th></tr></thead>
+        <tbody>
+        ${Object.entries(COUNCIL_TAX_GUILDFORD).map(([b,a])=>`<tr><td>Band ${b}</td><td class="num">${fmtGBP(a)}</td><td class="num">${fmtGBP(a/12)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Verify at <a href="https://www.guildford.gov.uk/counciltax" target="_blank">guildford.gov.uk/counciltax</a>; parish precepts vary slightly.</div>
+    </div>
+  `;
+}
+
+/* ---------- 7. Mutators ---------- */
+
+function goto(page){ view.page = page; render(); }
+function openProperty(id){ view.page = "detail"; view.id = id; render(); window.scrollTo(0,0); }
+
+function addProperty(){
+  const p = {
+    id: uid(),
+    name: "Property " + (state.properties.length + 1),
+    address: "",
+    listingUrl: "",
+    price: 400000,
+    beds: 3,
+    sqm: 0,
+    tenure: "Freehold",
+    epc: "",
+    councilTaxBand: "E",
+    notes: "",
+    mandatoryCosts: defaultMandatoryCosts(400000, state.profile),
+    renovation: defaultRenovationAreas(),
+    createdAt: Date.now()
+  };
+  state.properties.push(p);
+  saveState();
+  openProperty(p.id);
+}
+
+function duplicateProperty(id){
+  const orig = state.properties.find(x=>x.id===id); if(!orig) return;
+  const copy = JSON.parse(JSON.stringify(orig));
+  copy.id = uid();
+  copy.name = orig.name + " (copy)";
+  copy.mandatoryCosts.forEach(c=>c.id=uid());
+  copy.renovation.forEach(a=>{ a.id=uid(); a.items.forEach(i=>{ i.id=uid(); (i.quotes||[]).forEach(q=>q.id=uid()); }); });
+  state.properties.push(copy);
+  saveState(); render();
+}
+
+function deleteProperty(id){
+  if(!confirm("Delete this property and all its costs?")) return;
+  state.properties = state.properties.filter(p=>p.id!==id);
+  saveState(); render();
+}
+
+function updateProp(id,key,val){ const p = state.properties.find(x=>x.id===id); if(!p) return; p[key]=val; saveState(); }
+function updateProfile(key,val){ state.profile[key]=val; saveState(); render(); }
+
+function updateMandatory(pid, cid, key, val){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const c = p.mandatoryCosts.find(x=>x.id===cid); if(!c) return;
+  c[key]=val;
+  if(key==='amount') delete c.auto; // user override breaks auto
+  saveState();
+}
+function addMandatory(pid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  p.mandatoryCosts.push({id:uid(), category:"Other", label:"Custom cost", amount:0, notes:""});
+  saveState(); render();
+}
+function deleteMandatory(pid, cid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  p.mandatoryCosts = p.mandatoryCosts.filter(c=>c.id!==cid);
+  saveState(); render();
+}
+function updateCouncilTaxRow(pid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const row = p.mandatoryCosts.find(c=>c.label && c.label.startsWith("Council tax"));
+  if(row && p.councilTaxBand && COUNCIL_TAX_GUILDFORD[p.councilTaxBand]){
+    row.amount = Math.round(COUNCIL_TAX_GUILDFORD[p.councilTaxBand]/12);
+    row.label = "Council tax (1st month, Band " + p.councilTaxBand + ")";
+  }
+  saveState(); render();
+}
+
+function addArea(pid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  p.renovation.push({id:uid(), name:"New area", roomDims:null, items:[]});
+  saveState(); render();
+}
+function deleteArea(pid, aid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  if(!confirm("Remove this area and all its items?")) return;
+  p.renovation = p.renovation.filter(a=>a.id!==aid);
+  saveState(); render();
+}
+function updateArea(pid, aid, key, val){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  a[key]=val; saveState();
+}
+function toggleDims(pid, aid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  a.roomDims = a.roomDims ? null : {l:4, w:3, h:2.5};
+  saveState(); render();
+}
+function updateDim(pid, aid, key, val){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  if(!a.roomDims) a.roomDims={l:0,w:0,h:0};
+  a.roomDims[key]=val;
+  saveState(); render();
+}
+
+function addItem(pid, aid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  a.items.push({id:uid(), label:"", qty:1, unit:"job", unitPrice:0, store:"", quotes:[]});
+  saveState(); render();
+}
+function addPreset(pid, aid, idx, presetKey){
+  if(idx < 0) return;
+  const preset = ITEM_PRESETS[presetKey][idx];
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  a.items.push({id:uid(), label:preset.label, qty:1, unit:preset.unit, unitPrice:preset.unitPrice, store:preset.store, quotes:[]});
+  saveState(); render();
+}
+function deleteItem(pid, aid, iid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  a.items = a.items.filter(i=>i.id!==iid);
+  saveState(); render();
+}
+function updateItem(pid, aid, iid, key, val){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  const it = a.items.find(x=>x.id===iid); if(!it) return;
+  it[key]=val; saveState();
+}
+
+function addQuote(pid, aid, iid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  const it = a.items.find(x=>x.id===iid); if(!it) return;
+  if(!it.quotes) it.quotes=[];
+  it.quotes.push({id:uid(), store:"", price:0, url:""});
+  saveState(); render();
+}
+function updateQuote(pid, aid, iid, qid, key, val){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  const it = a.items.find(x=>x.id===iid); if(!it) return;
+  const q = it.quotes.find(x=>x.id===qid); if(!q) return;
+  q[key]=val; saveState();
+}
+function deleteQuote(pid, aid, iid, qid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  const it = a.items.find(x=>x.id===iid); if(!it) return;
+  it.quotes = it.quotes.filter(q=>q.id!==qid);
+  if(it.chosenQuoteId === qid) delete it.chosenQuoteId;
+  saveState(); render();
+}
+function chooseQuote(pid, aid, iid, qid){
+  const p = state.properties.find(x=>x.id===pid); if(!p) return;
+  const a = p.renovation.find(x=>x.id===aid); if(!a) return;
+  const it = a.items.find(x=>x.id===iid); if(!it) return;
+  it.chosenQuoteId = qid;
+  saveState();
+}
+function toggleQuotes(btn){
+  const wrap = btn.parentElement.querySelector('.quotes');
+  wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleCompare(id){
+  if(view.compareIds.includes(id)) view.compareIds = view.compareIds.filter(x=>x!==id);
+  else if(view.compareIds.length < 4) view.compareIds.push(id);
+  render();
+}
+
+/* ---------- 8. Sync setup modal ---------- */
+
+function openSyncModal(){
+  const modalBg = document.createElement('div');
+  modalBg.className = 'modal-bg';
+  modalBg.innerHTML = `
+    <div class="modal">
+      <h2>Connect to Google Sheets</h2>
+      <p>Live-sync this app with your partner via a Google Sheet you control.</p>
+      <ol style="font-size:14px;line-height:1.7;padding-left:20px">
+        <li>Open the file <strong>google-apps-script.gs</strong> from your folder.</li>
+        <li>Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → New project.</li>
+        <li>Paste the script's contents, click <strong>Deploy → New deployment → Web app</strong>.</li>
+        <li>Set "Execute as: Me", "Who has access: Anyone with the link". Authorize.</li>
+        <li>Copy the <strong>Web app URL</strong> and a secret <strong>token</strong> you choose, then paste below.</li>
+      </ol>
+      <div class="field"><label>Web app URL</label><input type="url" id="syncUrlInput" value="${escapeAttr((syncCfg||{}).url||'')}" placeholder="https://script.google.com/macros/s/…/exec"></div>
+      <div class="field"><label>Shared secret token (any phrase you both know)</label><input type="text" id="syncTokenInput" value="${escapeAttr((syncCfg||{}).token||'')}" placeholder="e.g. guildford-2026-zakharova"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn ghost" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+        <button class="btn primary" onclick="saveSyncCfg()">Save & test</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:14px">Share the same URL + token with your partner so you both edit the same Sheet from any device.</p>
+    </div>
+  `;
+  document.body.appendChild(modalBg);
+}
+
+async function saveSyncCfg(){
+  const url = document.getElementById('syncUrlInput').value.trim();
+  const token = document.getElementById('syncTokenInput').value.trim();
+  if(!url || !token){ toast("Both URL and token are required"); return; }
+  syncCfg = {url, token};
+  localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg));
+  document.querySelector('.modal-bg')?.remove();
+  toast("Testing connection…");
+  await pullSync();
+  await pushSync();
+  render();
+}
+
+function disconnectSync(){
+  if(!confirm("Disconnect cloud sync? Local data is kept.")) return;
+  syncCfg = null;
+  localStorage.removeItem(SYNC_KEY);
+  setSyncStatus("","Local only");
+  render();
+}
+
+/* ---------- 9. Export / import ---------- */
+document.getElementById('exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `home-in-the-uk-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+};
+document.getElementById('importBtn').onclick = ()=> document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = async (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const txt = await f.text();
+  try{
+    const j = JSON.parse(txt);
+    if(!j.properties) throw new Error("invalid");
+    if(confirm(`Replace your current data with this file (${j.properties.length} properties)?`)){
+      state = j; saveState(); render(); toast("Imported");
+    }
+  }catch(err){ toast("Couldn't parse that file"); }
+};
+document.getElementById('syncBtn').onclick = ()=> { view.page='settings'; render(); };
+
+/* ---------- 10. Helpers ---------- */
+function escapeHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function escapeAttr(s){ return escapeHtml(s); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------- 11. Boot ---------- */
+if(syncCfg && syncCfg.url){ setSyncStatus("ok", "Cloud sync"); pullSync(); }
+render();
+</script>
+</body>
+</html>
