@@ -441,7 +441,8 @@ function setSyncStatus(state, text){
 function scheduleSync(){
   if(!syncCfg || !syncCfg.url) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(pushSync, 800);
+  // Short debounce so reload-after-save can't race ahead of the network call.
+  syncTimer = setTimeout(pushSync, 300);
 }
 
 async function pushSync(){
@@ -466,17 +467,75 @@ async function pushSync(){
   }
 }
 
+/**
+ * Merge cloud state into local state by property ID + updatedAt.
+ * - Properties only in local → kept (they haven't reached cloud yet)
+ * - Properties only in cloud → added (partner created them)
+ * - Properties in both → newer updatedAt wins (per-property)
+ * - Buyer profile: cloud wins if cloud's overall updatedAt is newer
+ *
+ * This means a stale empty cloud state can NEVER wipe local properties.
+ */
+function mergeCloud(cloud){
+  if(!cloud || !cloud.properties) return false;
+  let changed = false;
+  const localById = {};
+  for(const p of state.properties) localById[p.id] = p;
+  const cloudById = {};
+  for(const p of cloud.properties) cloudById[p.id] = p;
+  // Merge tombstones (deletions). Local set ∪ cloud set wins.
+  const localTomb = state.tombstones || {};
+  const cloudTomb = cloud.tombstones || {};
+  state.tombstones = Object.assign({}, cloudTomb, localTomb);
+  // Add cloud-only properties (unless tombstoned anywhere)
+  for(const p of cloud.properties){
+    if(state.tombstones[p.id]) continue;
+    if(!localById[p.id]){
+      state.properties.push(p);
+      changed = true;
+    } else {
+      // Both exist — pick newer
+      const localP = localById[p.id];
+      const lt = localP.updatedAt || state.updatedAt || 0;
+      const ct = p.updatedAt || cloud.updatedAt || 0;
+      if(ct > lt){
+        Object.assign(localP, p);
+        changed = true;
+      }
+    }
+  }
+  // Drop any locally-present property that has a tombstone
+  const before = state.properties.length;
+  state.properties = state.properties.filter(p => !state.tombstones[p.id]);
+  if(state.properties.length !== before) changed = true;
+  // Profile: cloud wins if its overall stamp is newer
+  if(cloud.updatedAt && cloud.updatedAt > (state.updatedAt||0) && cloud.profile){
+    state.profile = cloud.profile;
+    changed = true;
+  }
+  return changed;
+}
+
 async function pullSync(){
   if(!syncCfg || !syncCfg.url) return;
   setSyncStatus("sync","Loading…");
   try{
     const r = await fetch(syncCfg.url + "?token=" + encodeURIComponent(syncCfg.token) + "&action=load", {mode:"cors"});
     const j = await r.json();
-    if(j && j.ok && j.state && j.state.updatedAt && j.state.updatedAt > (state.updatedAt||0)){
-      state = j.state;
-      saveState(true);
-      render();
-      setSyncStatus("ok","Loaded from cloud");
+    if(j && j.ok && j.state){
+      const changed = mergeCloud(j.state);
+      if(changed){
+        // Save merged state back. Stamp updatedAt so our merge result will
+        // out-rank the (now older) cloud state on next round.
+        state.updatedAt = Date.now();
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        render();
+        setSyncStatus("ok","Merged from cloud");
+        // Push merged result back so the cloud is up-to-date for partner too.
+        scheduleSync();
+      } else {
+        setSyncStatus("ok","Up to date");
+      }
     } else {
       setSyncStatus("ok","Up to date");
     }
@@ -487,6 +546,53 @@ async function pullSync(){
 
 /* Auto pull every 30s if sync configured */
 setInterval(()=>{ if(syncCfg && syncCfg.url) pullSync(); }, 30000);
+
+/* Best-effort: try to flush a pending push before unload (reload, tab close).
+   Uses sendBeacon which is allowed during pagehide. */
+window.addEventListener('pagehide', ()=>{
+  if(!syncCfg || !syncCfg.url) return;
+  // If there's still a debounced push waiting, flush it now.
+  if(syncTimer){
+    clearTimeout(syncTimer); syncTimer = null;
+    try{
+      const blob = new Blob(
+        [JSON.stringify({ token: syncCfg.token, action:"save", state })],
+        {type:"text/plain"}
+      );
+      navigator.sendBeacon(syncCfg.url, blob);
+    }catch(e){}
+  }
+});
+
+/* On every save, detect which properties actually changed (vs the previous
+   serialization) and stamp ONLY those with a fresh updatedAt. This way the
+   per-property merge in mergeCloud() correctly knows which side is newer. */
+let _lastSerialized = {};   // id -> last-saved JSON string
+const _origSaveState = saveState;
+saveState = function(skipSync){
+  const now = Date.now();
+  for(const p of state.properties){
+    // Compare without the updatedAt field itself
+    const ua = p.updatedAt; delete p.updatedAt;
+    const ser = JSON.stringify(p);
+    p.updatedAt = ua;
+    if(_lastSerialized[p.id] !== ser){
+      p.updatedAt = now;
+      _lastSerialized[p.id] = ser;
+    }
+  }
+  _origSaveState(skipSync);
+};
+// Initialize the snapshot from current state at boot
+function _initSerialSnapshot(){
+  _lastSerialized = {};
+  for(const p of state.properties){
+    const ua = p.updatedAt; delete p.updatedAt;
+    _lastSerialized[p.id] = JSON.stringify(p);
+    p.updatedAt = ua;
+  }
+}
+_initSerialSnapshot();
 
 /* ---------- 6. Rendering ---------- */
 
@@ -970,6 +1076,9 @@ function duplicateProperty(id){
 function deleteProperty(id){
   if(!confirm("Delete this property and all its costs?")) return;
   state.properties = state.properties.filter(p=>p.id!==id);
+  // Tombstone so a stale cloud merge can't resurrect it
+  if(!state.tombstones) state.tombstones = {};
+  state.tombstones[id] = Date.now();
   saveState(); render();
 }
 
