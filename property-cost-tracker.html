@@ -802,13 +802,13 @@ function renderArea(p, area){
           <div class="field"><label>Width (m)</label><input type="number" step="0.1" value="${dims.w||''}" oninput="updateDim('${p.id}','${area.id}','w',+this.value)"></div>
           <div class="field"><label>Height (m)</label><input type="number" step="0.1" value="${dims.h||''}" oninput="updateDim('${p.id}','${area.id}','h',+this.value)"></div>
         </div>
-        <div class="calc-helper">
+        <div class="calc-helper" id="calcHelper-${area.id}">
           From these dimensions:
-          <strong>${paintLitres(dims)}L paint</strong> (2 coats, +10%) ·
-          <strong>${flooringM2(dims)} m² flooring</strong> ·
-          <strong>${wallTilesM2(dims)} m² wall tiles</strong> ·
-          <strong>${wallpaperRolls(dims)} wallpaper rolls</strong> ·
-          <strong>${skirtingMetres(dims)} m skirting</strong>
+          <strong data-calc="paint">${paintLitres(dims)}L paint</strong> (2 coats, +10%) ·
+          <strong data-calc="flooring">${flooringM2(dims)} m² flooring</strong> ·
+          <strong data-calc="wallTiles">${wallTilesM2(dims)} m² wall tiles</strong> ·
+          <strong data-calc="wallpaper">${wallpaperRolls(dims)} wallpaper rolls</strong> ·
+          <strong data-calc="skirting">${skirtingMetres(dims)} m skirting</strong>
         </div>
       ` : ''}
 
@@ -1138,8 +1138,25 @@ function updateDim(pid, aid, key, val){
   const p = state.properties.find(x=>x.id===pid); if(!p) return;
   const a = p.renovation.find(x=>x.id===aid); if(!a) return;
   if(!a.roomDims) a.roomDims={l:0,w:0,h:0};
-  a.roomDims[key]=val;
-  saveState(); render();
+  a.roomDims[key] = isNaN(val) ? 0 : val;
+  saveState();
+  // Patch the calc helper in place — DO NOT re-render the whole app,
+  // otherwise the input being typed in is destroyed and the page jumps to the top.
+  const helper = document.getElementById('calcHelper-'+aid);
+  if(helper){
+    const dims = a.roomDims;
+    const map = {
+      paint:     `${paintLitres(dims)}L paint`,
+      flooring:  `${flooringM2(dims)} m² flooring`,
+      wallTiles: `${wallTilesM2(dims)} m² wall tiles`,
+      wallpaper: `${wallpaperRolls(dims)} wallpaper rolls`,
+      skirting:  `${skirtingMetres(dims)} m skirting`
+    };
+    for(const k in map){
+      const el = helper.querySelector(`[data-calc="${k}"]`);
+      if(el) el.textContent = map[k];
+    }
+  }
 }
 
 function addItem(pid, aid){
