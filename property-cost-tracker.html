@@ -1439,11 +1439,38 @@ function openPinModal(existingId){
   fileInput.onchange = ()=> { if(fileInput.files[0]) readPinFile(fileInput.files[0]); };
   function readPinFile(f){
     if(!f.type.startsWith('image/')){ toast("Only image files supported"); return; }
-    if(f.size > 4 * 1024 * 1024){
-      if(!confirm("That image is over 4MB and may slow down sync. Add anyway?")) return;
-    }
+    toast("Shrinking image…");
+    // Downscale to max 900px wide and re-encode as JPEG ~0.78 quality so
+    // even big iPhone screenshots fit inside the Google Sheets cell limit.
+    // A 4MB screenshot typically ends up ~80–150KB after this step.
     const r = new FileReader();
-    r.onload = ev => { urlField.value = ev.target.result; setKind('image'); toast("Image loaded"); };
+    r.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_W = 900;
+        const scale = img.width > MAX_W ? MAX_W / img.width : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        let outUrl;
+        try {
+          outUrl = canvas.toDataURL('image/jpeg', 0.78);
+        } catch(err) {
+          // Fallback for PNGs with transparency that fail JPEG export
+          outUrl = canvas.toDataURL('image/png');
+        }
+        urlField.value = outUrl;
+        setKind('image');
+        const kb = Math.round(outUrl.length / 1024);
+        toast(`Image ready (${kb} KB)`);
+      };
+      img.onerror = () => toast("Couldn't read image");
+      img.src = ev.target.result;
+    };
+    r.onerror = () => toast("Couldn't read file");
     r.readAsDataURL(f);
   }
 
